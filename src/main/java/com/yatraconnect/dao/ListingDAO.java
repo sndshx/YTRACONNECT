@@ -72,8 +72,11 @@ public class ListingDAO {
             return rowsAffected > 0;
 
         } catch (SQLException e) {
+            System.err.println("[ListingDAO.createListing] SQL Error: " + e.getMessage());
+            System.err.println("[ListingDAO.createListing] SQLState: " + e.getSQLState() + " | ErrorCode: " + e.getErrorCode());
             e.printStackTrace();
-            return false;
+            // Re-throw so the caller can surface the real error to the user
+            throw new RuntimeException("SQL[" + e.getErrorCode() + "]: " + e.getMessage(), e);
         }
     }
 

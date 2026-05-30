@@ -13,6 +13,7 @@ public class HamroTraveller {
     private String savedItineraries;
     private String googleId;
     private String authProvider;
+    private String profileImage;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
@@ -57,6 +58,9 @@ public class HamroTraveller {
 
     public String getAuthProvider() { return authProvider; }
     public void setAuthProvider(String authProvider) { this.authProvider = authProvider; }
+
+    public String getProfileImage() { return profileImage; }
+    public void setProfileImage(String profileImage) { this.profileImage = profileImage; }
 
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }

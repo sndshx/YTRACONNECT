@@ -105,14 +105,18 @@ public class BookingServlet extends HttpServlet {
             return;
         }
 
-        HamroTraveller traveller = (HamroTraveller) session.getAttribute("user");
-        if (traveller == null || !"traveller".equals(traveller.getRole())) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            return;
-        }
+        Object userObj = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
 
         response.setContentType("application/json");
         PrintWriter out = response.getWriter();
+
+        if (!"traveller".equals(role)) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            out.print("{\"error\": \"Only travellers can create bookings\"}");
+            return;
+        }
+        HamroTraveller traveller = (HamroTraveller) userObj;
 
         try {
             String listingId = request.getParameter("listingId");

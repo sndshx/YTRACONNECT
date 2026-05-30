@@ -1,0 +1,18 @@
+# Target build directory
+target/
+*.class
+*.jar
+*.war
+
+# IDE settings
+.idea/
+*.iml
+
+# Databases and SQL files
+*.sql
+*.db
+*.sqlite
+*.sqlite3
+*.mdf
+*.ldf
+*.db_journal

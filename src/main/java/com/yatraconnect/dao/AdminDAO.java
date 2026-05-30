@@ -205,4 +205,20 @@ public class AdminDAO {
         admin.setUpdatedAt(rs.getTimestamp("updatedAt"));
         return admin;
     }
+
+    /**
+     * Updates an admin's profile image URL.
+     */
+    public boolean updateProfileImage(String id, String imageUrl) {
+        String sql = "UPDATE Admins SET profileImage = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, imageUrl);
+            pstmt.setString(2, id);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

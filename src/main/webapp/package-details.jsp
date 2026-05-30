@@ -286,16 +286,36 @@
             + '&agency=' + encodeURIComponent(currentPackage.companyName || '');
     }
 
-    function toggleWishlist() {
+    async function toggleWishlist() {
+        if (!currentPackage) return;
         const btn = document.getElementById('wishlist-btn');
         const icon = btn.querySelector('.material-icons');
-        const saved = icon.textContent === 'favorite';
-        icon.textContent = saved ? 'favorite_border' : 'favorite';
-        icon.style.color = saved ? '' : '#C5A059';
         
-        // Optional: Add a little pop animation
-        icon.style.transform = 'scale(1.2)';
-        setTimeout(() => icon.style.transform = 'scale(1)', 200);
+        try {
+            const res = await fetch('wishlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ action: 'toggle', listingId: currentPackage.id })
+            });
+            if (res.status === 401) {
+                window.location.href = 'login.jsp?redirect=' + encodeURIComponent(window.location.href);
+                return;
+            }
+            if (!res.ok) throw new Error('Network error');
+            const data = await res.json();
+            if (data.success) {
+                const saved = data.status === 'added';
+                icon.textContent = saved ? 'favorite' : 'favorite_border';
+                icon.style.color = saved ? '#C5A059' : '';
+                
+                // Optional: Add a little pop animation
+                icon.style.transform = 'scale(1.2)';
+                setTimeout(() => icon.style.transform = 'scale(1)', 200);
+            }
+        } catch (e) {
+            console.error('Error toggling wishlist', e);
+            alert('Failed to update wishlist. Please try again.');
+        }
     }
 
     function typeConfig(type) {
@@ -439,6 +459,23 @@
             if (!res.ok) throw new Error('not found');
             const pkg = await res.json();
             if (!pkg || pkg.error) { showError(); return; }
+            
+            // Check wishlist status
+            try {
+                const wRes = await fetch('wishlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ action: 'check', listingId: id })
+                });
+                if (wRes.ok) {
+                    const wData = await wRes.json();
+                    if (wData.success && wData.isWishlisted) {
+                        const icon = document.querySelector('#wishlist-btn .material-icons');
+                        icon.textContent = 'favorite';
+                        icon.style.color = '#C5A059';
+                    }
+                }
+            } catch(e) {}
             
             // Artificial delay for smooth transition feeling
             setTimeout(() => {

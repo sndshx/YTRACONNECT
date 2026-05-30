@@ -99,7 +99,7 @@
                                         <span class="text-[11px] font-black uppercase tracking-widest">My
                                             Bookings</span>
                                     </a>
-                                    <a href="wishlist.jsp"
+                                    <a href="../wishlist"
                                         class="flex items-center gap-4 px-6 py-4 rounded-2xl text-white/60 hover:bg-white/5 hover:text-white transition-all duration-300 no-underline group">
                                         <span class="material-icons text-xl">favorite_border</span>
                                         <span class="text-[11px] font-black uppercase tracking-widest">Wishlist</span>

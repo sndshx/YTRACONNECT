@@ -45,6 +45,10 @@ public class AgencyDashboardServlet extends HttpServlet {
         // Load agency dashboard data
         List<Listing> listings = listingDAO.getListingsByAgentId(agentId);
         List<Booking> bookings = bookingDAO.getBookingsByAgentId(agentId);
+        for (Booking booking : bookings) {
+            System.out.println(booking.getGuestEmail());
+        }
+        System.out.println("Agency dashboard : " + bookings);
 
         // Calculate stats
         long totalListings = listings.size();

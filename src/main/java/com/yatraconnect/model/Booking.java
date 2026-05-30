@@ -34,6 +34,9 @@ public class Booking {
     private String checklist; // JSON string
     private Timestamp createdAt;
     private Timestamp updatedAt;
+    // Transient fields (joined from other tables, not persisted)
+    private String listingTitle;
+    private String travelerName;
 
     public Booking() {}
 
@@ -47,7 +50,7 @@ public class Booking {
         this.startDate = startDate;
         this.totalAmount = totalAmount;
         this.paymentStatus = "pending";
-        this.status = "confirmed";
+        this.status = "pending";
         this.createdBy = "traveller";
         this.tripStatus = "pending";
     }
@@ -139,4 +142,10 @@ public class Booking {
 
     public Timestamp getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getListingTitle() { return listingTitle != null ? listingTitle : bookingType; }
+    public void setListingTitle(String listingTitle) { this.listingTitle = listingTitle; }
+
+    public String getTravelerName() { return travelerName; }
+    public void setTravelerName(String travelerName) { this.travelerName = travelerName; }
 }

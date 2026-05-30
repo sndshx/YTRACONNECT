@@ -1,8 +1,17 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="com.yatraconnect.model.Admin" %>
+<%@ page import="java.util.List" %>
+<%@ page import="com.yatraconnect.model.Review" %>
 <%
     Admin admin = (Admin) session.getAttribute("admin");
     if (admin == null) { response.sendRedirect(request.getContextPath() + "/admin/login"); return; }
+    List<Review> reviews = (List<Review>) request.getAttribute("reviews");
+    String filter = (String) request.getAttribute("currentFilter");
+    String msg = (String) session.getAttribute("successMessage");
+    String err = (String) session.getAttribute("errorMessage");
+    if (msg != null) session.removeAttribute("successMessage");
+    if (err != null) session.removeAttribute("errorMessage");
+    long pendingCount = reviews != null ? reviews.stream().filter(r -> "pending".equals(r.getStatus())).count() : 0;
 %>
 <jsp:include page="../includes/header.jsp" />
 
@@ -108,7 +117,7 @@
             
             <div class="flex items-center gap-6">
                 <div class="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest">
-                    14 Pending Tasks
+                    <%= pendingCount %> Pending Tasks
                 </div>
                 <div class="flex items-center gap-3">
                     <img src="https://ui-avatars.com/api/?name=<%= admin.getFullName() %>&background=047857&color=fff" class="w-10 h-10 rounded-full border-2 border-white shadow-sm" alt="Avatar">
@@ -126,54 +135,53 @@
             <h1 class="text-4xl font-bold text-main">Content <span class="text-muted font-medium italic">Guardianship</span></h1>
         </section>
 
+        <% if (msg != null) { %><div class="mb-6 p-4 rounded-2xl bg-emerald-50 text-emerald-600 text-xs font-bold uppercase tracking-widest text-center border border-emerald-100"><%= msg %></div><% } %>
+        <% if (err != null) { %><div class="mb-6 p-4 rounded-2xl bg-red-50 text-red-600 text-xs font-bold uppercase tracking-widest text-center border border-red-100"><%= err %></div><% } %>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <!-- Feed -->
             <div class="lg:col-span-8 space-y-6">
+                <% if (reviews != null && !reviews.isEmpty()) {
+                    for (Review review : reviews) {
+                %>
                 <div class="glass-card">
                     <div class="flex items-start justify-between mb-6">
                         <div class="flex items-center gap-4">
-                            <img src="https://ui-avatars.com/api/?name=Anish+Shrestha&background=random" class="w-12 h-12 rounded-2xl" alt="Avatar">
+                            <img src="https://ui-avatars.com/api/?name=<%= review.getCustomerName() %>&background=random" class="w-12 h-12 rounded-2xl" alt="Avatar">
                             <div>
-                                <h4 class="text-sm font-bold text-main">Anish Shrestha</h4>
-                                <p class="text-[9px] text-muted font-bold uppercase tracking-widest">on <span class="text-emerald-600">Everest Base Camp Trek</span></p>
+                                <h4 class="text-sm font-bold text-main"><%= review.getCustomerName() %></h4>
+                                <p class="text-[9px] text-muted font-bold uppercase tracking-widest">on <span class="text-emerald-600"><%= review.getServiceType() != null ? review.getServiceType() : "Unknown Service" %></span></p>
                             </div>
                         </div>
                         <div class="flex items-center gap-0.5 text-amber-400">
-                            <span class="material-icons text-sm">star</span><span class="material-icons text-sm">star</span><span class="material-icons text-sm">star</span><span class="material-icons text-sm">star</span><span class="material-icons text-sm">star</span>
+                            <% for(int i=1; i<=5; i++) { %>
+                                <span class="material-icons text-sm <%= i <= review.getRating() ? "" : "text-gray-200" %>">star</span>
+                            <% } %>
                         </div>
                     </div>
-                    <p class="text-xs text-muted leading-relaxed mb-8 italic">"An absolutely breathtaking experience. The guide from High Himalayan Expeditions was incredibly professional and knew every corner of the trail. Highly recommended!"</p>
+                    <p class="text-xs text-muted leading-relaxed mb-8 italic">"<%= review.getMessage() %>"</p>
                     <div class="flex items-center justify-between pt-6 border-t border-gray-50">
-                        <span class="text-[9px] text-muted font-bold uppercase tracking-widest">Submitted: April 24, 2026</span>
+                        <div>
+                            <span class="text-[9px] text-muted font-bold uppercase tracking-widest">Submitted: <%= review.getCreatedAt() %></span>
+                            <span class="ml-2 px-2 py-1 rounded text-[8px] font-bold uppercase tracking-widest <%= "approved".equals(review.getStatus()) ? "bg-emerald-100 text-emerald-700" : "pending".equals(review.getStatus()) ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700" %>"><%= review.getStatus() %></span>
+                        </div>
                         <div class="flex items-center gap-2">
-                            <button class="btn-green">Approve</button>
-                            <button class="px-4 py-2 bg-gray-50 text-muted text-[10px] font-bold uppercase rounded-xl hover:bg-red-50 hover:text-red-600 transition-all">Flag</button>
+                            <form method="POST" action="<%= request.getContextPath() %>/admin/reviews/" class="m-0 flex gap-2">
+                                <input type="hidden" name="reviewId" value="<%= review.getId() %>">
+                                <% if ("pending".equals(review.getStatus())) { %>
+                                <button type="submit" name="action" value="approve" class="btn-green">Approve</button>
+                                <button type="submit" name="action" value="reject" class="px-4 py-2 bg-gray-50 text-muted text-[10px] font-bold uppercase rounded-xl hover:bg-amber-50 hover:text-amber-600 transition-all">Reject</button>
+                                <% } %>
+                                <button type="submit" name="action" value="delete" class="px-4 py-2 bg-gray-50 text-muted text-[10px] font-bold uppercase rounded-xl hover:bg-red-50 hover:text-red-600 transition-all" onclick="return confirm('Are you sure you want to delete this review?');">Delete</button>
+                            </form>
                         </div>
                     </div>
                 </div>
-
-                <div class="glass-card">
-                    <div class="flex items-start justify-between mb-6">
-                        <div class="flex items-center gap-4">
-                            <img src="https://ui-avatars.com/api/?name=Pooja+Rai&background=random" class="w-12 h-12 rounded-2xl" alt="Avatar">
-                            <div>
-                                <h4 class="text-sm font-bold text-main">Pooja Rai</h4>
-                                <p class="text-[9px] text-muted font-bold uppercase tracking-widest">on <span class="text-emerald-600">Kathmandu Marriott Hotel</span></p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-0.5 text-amber-400">
-                            <span class="material-icons text-sm">star</span><span class="material-icons text-sm">star</span><span class="material-icons text-sm">star</span><span class="material-icons text-sm">star</span><span class="material-icons text-sm text-gray-200">star</span>
-                        </div>
-                    </div>
-                    <p class="text-xs text-muted leading-relaxed mb-8 italic">"The stay was good overall, but the check-in process was a bit slow. Rooms are excellent and the staff is friendly."</p>
-                    <div class="flex items-center justify-between pt-6 border-t border-gray-50">
-                        <span class="text-[9px] text-muted font-bold uppercase tracking-widest">Submitted: April 22, 2026</span>
-                        <div class="flex items-center gap-2">
-                            <button class="btn-green">Approve</button>
-                            <button class="px-4 py-2 bg-gray-50 text-muted text-[10px] font-bold uppercase rounded-xl hover:bg-red-50 hover:text-red-600 transition-all">Flag</button>
-                        </div>
-                    </div>
+                <% } } else { %>
+                <div class="glass-card text-center py-10">
+                    <p class="text-muted text-sm font-bold">No reviews found.</p>
                 </div>
+                <% } %>
             </div>
 
             <!-- Insights -->

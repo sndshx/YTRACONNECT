@@ -108,10 +108,10 @@
                                 </div>
                             </td>
                             <td class="px-8 py-8">
-                                <p class="text-white font-bold text-sm mb-1"><%= booking.getBookingType() %></p>
+                                <p class="text-white font-bold text-sm mb-1"><%= booking.getListingTitle() %></p>
                                 <div class="flex items-center gap-2 text-<%= statusColor %>/80">
-                                    <span class="material-icons text-[10px]">event_note</span>
-                                    <span class="text-[9px] font-black uppercase tracking-widest">ID: <%= booking.getSerialId() != null ? booking.getSerialId() : "N/A" %></span>
+                                    <span class="material-icons text-[10px]">confirmation_number</span>
+                                    <span class="text-[9px] font-black uppercase tracking-widest">ID: <%= booking.getId() != null ? booking.getId().substring(0, 8) : "N/A" %></span>
                                 </div>
                             </td>
                             <td class="px-8 py-8 text-center">
@@ -135,7 +135,7 @@
                             <td class="px-8 py-8">
                                 <div class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
                                     <% if ("pending".equals(booking.getStatus()) || "confirmed".equals(booking.getStatus())) { %>
-                                    <form action="bookings" method="POST" class="m-0">
+                                    <form action="${pageContext.request.contextPath}/agency/bookings/" method="POST" class="m-0">
                                         <input type="hidden" name="bookingId" value="<%= booking.getId() %>">
                                         <% if (!"confirmed".equals(booking.getStatus())) { %>
                                         <button type="submit" name="action" value="accept" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent text-primary-dark font-black text-[9px] uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_15px_rgba(197,160,89,0.3)]">
@@ -143,7 +143,7 @@
                                         </button>
                                         <% } %>
                                         <% if (!"cancelled".equals(booking.getStatus())) { %>
-                                        <button type="submit" name="action" value="decline" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-black text-[9px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all">
+                                        <button type="submit" name="action" value="reject" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-black text-[9px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all">
                                             <span class="material-icons text-sm">cancel</span> Decline
                                         </button>
                                         <% } %>

@@ -290,4 +290,23 @@ public class AgentDAO {
         agent.setUpdatedAt(rs.getTimestamp("updatedAt"));
         return agent;
     }
+
+    /**
+     * Updates an agent's profile image URL.
+     * @param id The agent's ID.
+     * @param imageUrl The new profile image URL.
+     * @return boolean true if update is successful, false otherwise.
+     */
+    public boolean updateProfileImage(String id, String imageUrl) {
+        String sql = "UPDATE HamroAgents SET profileImage = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, imageUrl);
+            pstmt.setString(2, id);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

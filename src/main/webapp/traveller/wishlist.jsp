@@ -1,10 +1,17 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="com.yatraconnect.model.HamroTraveller" %>
+<%@ page import="com.yatraconnect.model.Listing" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.ArrayList" %>
 <%
     HamroTraveller user = (HamroTraveller) session.getAttribute("user");
     if (user == null || !"traveller".equals(session.getAttribute("role"))) {
         response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
+    }
+    List<Listing> wishlists = (List<Listing>) request.getAttribute("wishlists");
+    if (wishlists == null) {
+        wishlists = new ArrayList<>();
     }
 %>
 <jsp:include page="../includes/header.jsp" />
@@ -51,103 +58,77 @@
 
         <!-- Wishlist Content Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 fade-in-up-delay-2">
-            <!-- Detailed Wishlist Card 1 -->
-            <div class="group bg-white/[0.03] border border-white/5 rounded-[3.5rem] overflow-hidden backdrop-blur-xl flex flex-col md:flex-row hover:border-[#C5A059]/30 transition-all duration-700 shadow-2xl">
+            <% if (wishlists.isEmpty()) { %>
+                <div class="col-span-full text-center py-20 bg-white/[0.02] border border-white/5 rounded-[3.5rem] backdrop-blur-xl">
+                    <span class="material-icons text-6xl text-white/20 mb-4">favorite_border</span>
+                    <h3 class="text-3xl font-serif font-bold text-white mb-2">Your wishlist is empty</h3>
+                    <p class="text-white/40 mb-8">Start exploring and save your favorite experiences for later.</p>
+                    <a href="../explore.jsp" class="px-10 py-4 bg-[#C5A059] text-primary rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-[#C5A059]/20 hover:scale-105 transition-all no-underline inline-block">Explore Packages</a>
+                </div>
+            <% } else {
+                for (Listing item : wishlists) {
+                    String imgUrl = "https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1200";
+                    if (item.getImages() != null && item.getImages().contains("[")) {
+                        try {
+                            String[] imgs = item.getImages().replaceAll("[\\[\\]\"]", "").split(",");
+                            if (imgs.length > 0 && !imgs[0].trim().isEmpty()) {
+                                imgUrl = imgs[0].trim();
+                            }
+                        } catch (Exception e) {}
+                    }
+                    String typeColor = "emerald";
+                    String tagLabel = item.getType();
+                    if ("hotel".equals(item.getType())) { typeColor = "cyan"; tagLabel = "Verified Stay"; }
+                    else if ("trekking".equals(item.getType())) { typeColor = "emerald"; tagLabel = "Best Seller"; }
+                    else { typeColor = "blue"; tagLabel = "Experience"; }
+            %>
+            <div class="group bg-white/[0.03] border border-white/5 rounded-[3.5rem] overflow-hidden backdrop-blur-xl flex flex-col md:flex-row hover:border-[#C5A059]/30 transition-all duration-700 shadow-2xl relative">
+                <button onclick="removeFromWishlist('<%= item.getId() %>')" class="absolute top-6 right-6 z-20 w-12 h-12 rounded-2xl bg-black/40 backdrop-blur-md hover:bg-red-500 border border-white/10 text-white flex items-center justify-center transition-all duration-300">
+                    <span class="material-icons">delete_outline</span>
+                </button>
                 <div class="md:w-2/5 h-80 md:h-auto relative overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1200" 
-                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2s]" alt="Adventure">
+                    <img src="<%= imgUrl %>" 
+                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2s]" alt="<%= item.getTitle() %>">
                     <div class="absolute inset-0 bg-gradient-to-r from-[#0F281E]/40 to-transparent"></div>
                     <div class="absolute top-8 left-8 flex flex-col gap-2">
-                        <span class="px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase tracking-widest border border-emerald-500/30 backdrop-blur-md">Best Seller</span>
-                        <span class="px-4 py-1.5 rounded-full bg-[#C5A059]/20 text-[#C5A059] text-[8px] font-black uppercase tracking-widest border border-[#C5A059]/30 backdrop-blur-md">May - Oct</span>
+                        <span class="px-4 py-1.5 rounded-full bg-<%= typeColor %>-500/20 text-<%= typeColor %>-400 text-[8px] font-black uppercase tracking-widest border border-<%= typeColor %>-500/30 backdrop-blur-md"><%= tagLabel %></span>
                     </div>
                 </div>
                 
                 <div class="flex-1 p-10 flex flex-col">
                     <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <h3 class="text-3xl font-serif font-bold text-white mb-2 leading-tight">Mardi Himal <br>Discovery</h3>
+                        <div class="pr-12">
+                            <h3 class="text-3xl font-serif font-bold text-white mb-2 leading-tight"><%= item.getTitle() %></h3>
                             <p class="text-white/40 text-xs flex items-center gap-2">
-                                <span class="material-icons text-sm text-[#C5A059]">location_on</span> Annapurna Sanctuary
+                                <span class="material-icons text-sm text-[#C5A059]">location_on</span> <%= item.getLocation() != null ? item.getLocation() : "Nepal" %>
                             </p>
                         </div>
-                        <button class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-xl">
-                            <span class="material-icons">favorite</span>
-                        </button>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-6 mb-10 pt-6 border-t border-white/5">
                         <div>
-                            <p class="text-[8px] text-white/20 font-black uppercase tracking-widest mb-1">Difficulty</p>
-                            <p class="text-white font-bold text-xs uppercase tracking-wider">Moderate</p>
+                            <p class="text-[8px] text-white/20 font-black uppercase tracking-widest mb-1"><%= "hotel".equals(item.getType()) ? "Luxury Class" : "Difficulty" %></p>
+                            <p class="text-white font-bold text-xs uppercase tracking-wider"><%= "hotel".equals(item.getType()) ? (item.getHotelCategory() != null ? item.getHotelCategory() : "Hotel") : (item.getDifficulty() != null ? item.getDifficulty() : "All Levels") %></p>
                         </div>
                         <div>
                             <p class="text-[8px] text-white/20 font-black uppercase tracking-widest mb-1">Avg Rating</p>
                             <div class="flex items-center gap-1">
                                 <span class="material-icons text-xs text-[#C5A059]">star</span>
-                                <span class="text-white font-bold text-xs">4.9/5.0</span>
+                                <span class="text-white font-bold text-xs"><%= String.format("%.1f", item.getAvgRating()) %>/5.0</span>
                             </div>
                         </div>
                     </div>
                     
                     <div class="mt-auto flex items-center justify-between">
                         <div>
-                            <p class="text-[9px] text-white/20 font-black uppercase tracking-widest mb-1">Trip Value</p>
-                            <p class="text-3xl font-serif font-bold text-[#C5A059]">$450</p>
+                            <p class="text-[9px] text-white/20 font-black uppercase tracking-widest mb-1"><%= "hotel".equals(item.getType()) ? "Daily Rate" : "Trip Value" %></p>
+                            <p class="text-3xl font-serif font-bold <%= "hotel".equals(item.getType()) ? "text-white" : "text-[#C5A059]" %>">NPR <%= item.getPrice() %></p>
                         </div>
-                        <a href="../explore.jsp" class="px-10 py-4 bg-[#C5A059] text-primary rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all no-underline shadow-2xl shadow-[#C5A059]/20">Book Trek</a>
+                        <a href="../package-details.jsp?id=<%= item.getId() %>" class="px-10 py-4 <%= "hotel".equals(item.getType()) ? "bg-white/5 border border-white/10 text-white hover:bg-white hover:text-primary" : "bg-[#C5A059] text-primary shadow-2xl shadow-[#C5A059]/20" %> rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all no-underline">View Details</a>
                     </div>
                 </div>
             </div>
-
-            <!-- Detailed Wishlist Card 2 -->
-            <div class="group bg-white/[0.03] border border-white/5 rounded-[3.5rem] overflow-hidden backdrop-blur-xl flex flex-col md:flex-row hover:border-cyan-500/30 transition-all duration-700 shadow-2xl">
-                <div class="md:w-2/5 h-80 md:h-auto relative overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1200" 
-                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2s]" alt="Luxury Hotel">
-                    <div class="absolute inset-0 bg-gradient-to-r from-[#0F281E]/40 to-transparent"></div>
-                    <div class="absolute top-8 left-8 flex flex-col gap-2">
-                        <span class="px-4 py-1.5 rounded-full bg-cyan-400/20 text-cyan-400 text-[8px] font-black uppercase tracking-widest border border-cyan-400/30 backdrop-blur-md">Verified Stay</span>
-                    </div>
-                </div>
-                
-                <div class="flex-1 p-10 flex flex-col">
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <h3 class="text-3xl font-serif font-bold text-white mb-2 leading-tight">Kathmandu <br>Marriott Hotel</h3>
-                            <p class="text-white/40 text-xs flex items-center gap-2">
-                                <span class="material-icons text-sm text-cyan-400">location_on</span> Kathmandu Valley
-                            </p>
-                        </div>
-                        <button class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-xl">
-                            <span class="material-icons">favorite</span>
-                        </button>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-6 mb-10 pt-6 border-t border-white/5">
-                        <div>
-                            <p class="text-[8px] text-white/20 font-black uppercase tracking-widest mb-1">Luxury Class</p>
-                            <p class="text-white font-bold text-xs uppercase tracking-wider">5-Star Elite</p>
-                        </div>
-                        <div>
-                            <p class="text-[8px] text-white/20 font-black uppercase tracking-widest mb-1">Amenities</p>
-                            <div class="flex items-center gap-2 text-white/40">
-                                <span class="material-icons text-sm">spa</span>
-                                <span class="material-icons text-sm">pool</span>
-                                <span class="material-icons text-sm">wifi</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-auto flex items-center justify-between">
-                        <div>
-                            <p class="text-[9px] text-white/20 font-black uppercase tracking-widest mb-1">Daily Rate</p>
-                            <p class="text-3xl font-serif font-bold text-white">$180</p>
-                        </div>
-                        <a href="../explore.jsp" class="px-10 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-primary transition-all no-underline">Reserve Suite</a>
-                    </div>
-                </div>
-            </div>
+            <% } } %>
         </div>
 
         <!-- Floating Quick Action -->
@@ -158,5 +139,25 @@
 </section>
 
 <jsp:include page="../includes/footer.jsp" />
+
+<script>
+    async function removeFromWishlist(id) {
+        if (!confirm('Remove this item from your wishlist?')) return;
+        try {
+            const res = await fetch('<%= request.getContextPath() %>/wishlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ action: 'toggle', listingId: id })
+            });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alert('Failed to remove item. Please try again.');
+            }
+        } catch(e) {
+            console.error('Error removing from wishlist', e);
+        }
+    }
+</script>
 </body>
 </html>

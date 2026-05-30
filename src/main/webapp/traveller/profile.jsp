@@ -22,11 +22,14 @@
             <div class="max-w-7xl mx-auto flex items-end justify-between">
                 <div class="flex items-center gap-8 fade-in-up">
                     <div class="relative">
+                        <form id="profileUploadForm" action="<%= request.getContextPath() %>/uploadProfileImage" method="POST" enctype="multipart/form-data" class="hidden">
+                            <input type="file" id="profileImageInput" name="profileImage" accept="image/*" onchange="document.getElementById('profileUploadForm').submit();">
+                        </form>
                         <div class="w-32 h-32 md:w-40 md:h-40 rounded-[2.5rem] border-4 border-[#C5A059] p-1 bg-[#0F281E] shadow-2xl overflow-hidden shadow-[#C5A059]/20">
-                            <img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?q=80&w=400" 
+                            <img src="<%= (user.getProfileImage() != null && !user.getProfileImage().isEmpty()) ? user.getProfileImage() : "https://images.unsplash.com/photo-1527980965255-d3b416303d12?q=80&w=400" %>" 
                                  class="w-full h-full rounded-[2rem] object-cover" alt="Avatar">
                         </div>
-                        <button class="absolute -bottom-2 -right-2 w-10 h-10 bg-[#C5A059] rounded-xl text-primary flex items-center justify-center shadow-xl hover:scale-110 transition-all">
+                        <button onclick="document.getElementById('profileImageInput').click();" class="absolute -bottom-2 -right-2 w-10 h-10 bg-[#C5A059] rounded-xl text-primary flex items-center justify-center shadow-xl hover:scale-110 transition-all cursor-pointer z-10">
                             <span class="material-icons text-sm">photo_camera</span>
                         </button>
                     </div>

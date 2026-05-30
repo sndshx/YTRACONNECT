@@ -1,11 +1,17 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="com.yatraconnect.model.HamroTraveller" %>
+<%@ page import="com.yatraconnect.dao.BookingDAO" %>
+<%@ page import="com.yatraconnect.model.Booking" %>
+<%@ page import="java.util.List" %>
 <%
     HamroTraveller user = (HamroTraveller) session.getAttribute("user");
     if (user == null || !"traveller".equals(session.getAttribute("role"))) {
         response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
     }
+    BookingDAO bookingDAO = new BookingDAO();
+    List<Booking> bookings = bookingDAO.getBookingsByTravellerId(user.getId());
+    long completedCount = bookings.stream().filter(b -> "completed".equals(b.getTripStatus())).count();
 %>
 <jsp:include page="../includes/header.jsp" />
 <jsp:include page="../includes/navbar.jsp" />
@@ -27,7 +33,7 @@
             <div class="flex items-center gap-4">
                 <div class="px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-center">
                     <p class="text-[9px] font-black text-[#C5A059] uppercase tracking-widest mb-1">Total Expeditions</p>
-                    <p class="text-2xl font-bold text-white">08</p>
+                    <p class="text-2xl font-bold text-white"><%= String.format("%02d", bookings.size()) %></p>
                 </div>
             </div>
         </div>
@@ -129,7 +135,6 @@
                 </div>
             </div>
 
-            <!-- Past Journey Section -->
             <div class="mt-24 space-y-8">
                 <div class="flex items-center gap-6 mb-12">
                     <h4 class="text-2xl font-serif font-bold text-white tracking-tight">Recent <span class="italic text-[#C5A059]">Memories</span></h4>
@@ -137,18 +142,27 @@
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <% for (Booking b : bookings) { 
+                        if ("completed".equals(b.getTripStatus())) {
+                    %>
                     <div class="bg-white/[0.02] border border-white/5 rounded-[3rem] p-10 backdrop-blur-xl flex items-center justify-between hover:bg-white/5 transition-all group">
                         <div class="flex items-center gap-8">
-                            <div class="w-20 h-20 rounded-[1.5rem] overflow-hidden">
+                            <div class="w-20 h-20 rounded-[1.5rem] overflow-hidden flex shrink-0">
                                 <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=400" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" alt="Hotel">
                             </div>
                             <div>
-                                <h5 class="text-white font-bold text-lg mb-1">Dwarika's Heritage stay</h5>
-                                <p class="text-[9px] text-white/20 font-black uppercase tracking-widest">Completed Dec 2025 • Verified</p>
+                                <h5 class="text-white font-bold text-lg mb-1"><%= b.getListingTitle() %></h5>
+                                <p class="text-[9px] text-white/20 font-black uppercase tracking-widest">Completed <%= b.getEndDate() != null ? b.getEndDate() : b.getStartDate() %> • Verified</p>
                             </div>
                         </div>
-                        <button class="px-8 py-3 rounded-xl bg-white/5 border border-white/10 text-[#C5A059] text-[9px] font-black uppercase tracking-widest hover:bg-[#C5A059] hover:text-primary transition-all">Review</button>
+                        <button onclick="openReviewModal('<%= b.getListingId() %>', '<%= b.getBookingType() %>', '<%= b.getCompanyName() != null ? b.getCompanyName().replace("'", "\\'") : "" %>')" class="px-8 py-3 rounded-xl bg-white/5 border border-white/10 text-[#C5A059] text-[9px] font-black uppercase tracking-widest hover:bg-[#C5A059] hover:text-primary transition-all">Review</button>
                     </div>
+                    <% } } %>
+                    <% if (completedCount == 0) { %>
+                    <div class="col-span-1 md:col-span-2 text-center py-10 border border-white/5 rounded-[3rem]">
+                        <p class="text-white/40 text-sm font-bold">No completed journeys yet.</p>
+                    </div>
+                    <% } %>
                 </div>
             </div>
         </div>
@@ -156,5 +170,114 @@
 </section>
 
 <jsp:include page="../includes/footer.jsp" />
+
+<!-- Review Modal -->
+<div id="reviewModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeReviewModal()"></div>
+    <div class="relative bg-[#0F281E] border border-white/10 rounded-[2.5rem] p-10 w-full max-w-lg shadow-[0_30px_60px_rgba(0,0,0,0.5)] fade-in-up">
+        <button onclick="closeReviewModal()" class="absolute top-6 right-6 text-white/40 hover:text-white">
+            <span class="material-icons">close</span>
+        </button>
+        <h3 class="text-3xl font-serif font-bold text-white mb-2">Write a <span class="italic text-[#C5A059]">Review</span></h3>
+        <p class="text-white/40 text-xs mb-8">Share your experience to help fellow travelers.</p>
+        
+        <form id="reviewForm" onsubmit="submitReview(event)">
+            <input type="hidden" id="revListingId" name="listingId">
+            <input type="hidden" id="revServiceType" name="serviceType">
+            <input type="hidden" id="revCompanyName" name="companyName">
+            
+            <div class="mb-6">
+                <label class="block text-[9px] text-[#C5A059] font-black uppercase tracking-widest mb-3">Your Rating</label>
+                <div class="flex items-center gap-2" id="starContainer">
+                    <span class="material-icons text-3xl text-gray-500 cursor-pointer hover:text-amber-400" onclick="setRating(1)">star</span>
+                    <span class="material-icons text-3xl text-gray-500 cursor-pointer hover:text-amber-400" onclick="setRating(2)">star</span>
+                    <span class="material-icons text-3xl text-gray-500 cursor-pointer hover:text-amber-400" onclick="setRating(3)">star</span>
+                    <span class="material-icons text-3xl text-gray-500 cursor-pointer hover:text-amber-400" onclick="setRating(4)">star</span>
+                    <span class="material-icons text-3xl text-gray-500 cursor-pointer hover:text-amber-400" onclick="setRating(5)">star</span>
+                </div>
+                <input type="hidden" id="revRating" name="rating" value="0" required>
+            </div>
+            
+            <div class="mb-8">
+                <label class="block text-[9px] text-[#C5A059] font-black uppercase tracking-widest mb-3">Your Experience</label>
+                <textarea id="revMessage" name="message" rows="4" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm focus:outline-none focus:border-[#C5A059]" placeholder="Tell us what you loved..." required></textarea>
+            </div>
+            
+            <button type="submit" class="w-full py-4 bg-[#C5A059] text-[#0F281E] rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-2xl shadow-[#C5A059]/20">Submit Review</button>
+        </form>
+        <div id="reviewStatus" class="mt-4 text-center text-xs font-bold hidden"></div>
+    </div>
+</div>
+
+<script>
+    let currentRating = 0;
+    
+    function setRating(rating) {
+        currentRating = rating;
+        document.getElementById('revRating').value = rating;
+        const stars = document.getElementById('starContainer').children;
+        for (let i = 0; i < 5; i++) {
+            if (i < rating) {
+                stars[i].classList.remove('text-gray-500');
+                stars[i].classList.add('text-amber-400');
+            } else {
+                stars[i].classList.add('text-gray-500');
+                stars[i].classList.remove('text-amber-400');
+            }
+        }
+    }
+
+    function openReviewModal(listingId, serviceType, companyName) {
+        document.getElementById('revListingId').value = listingId;
+        document.getElementById('revServiceType').value = serviceType;
+        document.getElementById('revCompanyName').value = companyName;
+        setRating(0);
+        document.getElementById('revMessage').value = '';
+        document.getElementById('reviewStatus').classList.add('hidden');
+        document.getElementById('reviewModal').classList.remove('hidden');
+    }
+
+    function closeReviewModal() {
+        document.getElementById('reviewModal').classList.add('hidden');
+    }
+
+    async function submitReview(e) {
+        e.preventDefault();
+        if (currentRating === 0) {
+            alert("Please select a rating.");
+            return;
+        }
+        
+        const form = document.getElementById('reviewForm');
+        const formData = new URLSearchParams(new FormData(form));
+        
+        const statusEl = document.getElementById('reviewStatus');
+        statusEl.classList.remove('hidden');
+        statusEl.className = 'mt-4 text-center text-xs font-bold text-[#C5A059]';
+        statusEl.innerText = "Submitting...";
+
+        try {
+            const response = await fetch('<%= request.getContextPath() %>/api/reviews/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            });
+            const data = await response.json();
+            
+            if (response.ok) {
+                statusEl.className = 'mt-4 text-center text-xs font-bold text-emerald-400';
+                statusEl.innerText = data.message || "Review submitted! Pending approval.";
+                setTimeout(closeReviewModal, 2000);
+            } else {
+                statusEl.className = 'mt-4 text-center text-xs font-bold text-red-400';
+                statusEl.innerText = data.error || "Failed to submit review.";
+            }
+        } catch (error) {
+            statusEl.className = 'mt-4 text-center text-xs font-bold text-red-400';
+            statusEl.innerText = "An error occurred.";
+        }
+    }
+</script>
+
 </body>
 </html>

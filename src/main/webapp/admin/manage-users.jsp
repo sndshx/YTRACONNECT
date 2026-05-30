@@ -1,8 +1,15 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="com.yatraconnect.model.Admin" %>
+<%@ page import="com.yatraconnect.model.HamroTraveller" %>
+<%@ page import="java.util.List" %>
 <%
     Admin admin = (Admin) session.getAttribute("admin");
     if (admin == null) { response.sendRedirect(request.getContextPath() + "/admin/login"); return; }
+    List<HamroTraveller> users = (List<HamroTraveller>) request.getAttribute("users");
+    String successMessage = (String) session.getAttribute("successMessage");
+    String errorMessage   = (String) session.getAttribute("errorMessage");
+    session.removeAttribute("successMessage");
+    session.removeAttribute("errorMessage");
 %>
 <jsp:include page="../includes/header.jsp" />
 
@@ -138,13 +145,28 @@
             <h1 class="text-4xl font-bold text-main">Member <span class="text-muted font-medium italic">Directory</span></h1>
         </section>
 
+        <!-- Flash Messages -->
+        <% if (successMessage != null) { %>
+            <div class="mb-6 px-5 py-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold flex items-center gap-3">
+                <span class="material-icons text-lg">check_circle</span> <%= successMessage %>
+            </div>
+        <% } %>
+        <% if (errorMessage != null) { %>
+            <div class="mb-6 px-5 py-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold flex items-center gap-3">
+                <span class="material-icons text-lg">error</span> <%= errorMessage %>
+            </div>
+        <% } %>
+
         <!-- Content Area -->
         <div class="glass-card">
             <div class="flex items-center justify-between mb-8">
-                <h4 class="text-sm font-bold text-main">Platform Members</h4>
+                <h4 class="text-sm font-bold text-main">Platform Members
+                    <span class="ml-2 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] font-bold">
+                        <%= (users != null ? users.size() : 0) %> total
+                    </span>
+                </h4>
                 <div class="flex gap-2">
                     <button class="px-4 py-2 rounded-xl border border-gray-200 text-[10px] font-bold text-muted hover:bg-gray-50 transition-all">Export CSV</button>
-                    <button class="btn-green">Add New Member</button>
                 </div>
             </div>
 
@@ -160,78 +182,74 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
-                        <tr class="group hover:bg-gray-50/50 transition-colors">
-                            <td class="py-5">
-                                <div class="flex items-center gap-3">
-                                    <img src="https://ui-avatars.com/api/?name=John+Doe&background=random" class="w-10 h-10 rounded-xl" alt="Avatar">
-                                    <div>
-                                        <p class="text-xs font-bold text-main">John Doe</p>
-                                        <p class="text-[10px] text-muted font-medium">john.doe@example.com</p>
+                        <% if (users == null || users.isEmpty()) { %>
+                            <tr>
+                                <td colspan="5" class="py-16 text-center">
+                                    <span class="material-icons text-4xl text-muted block mb-3">people_outline</span>
+                                    <p class="text-sm font-bold text-muted">No registered users yet.</p>
+                                </td>
+                            </tr>
+                        <% } else { %>
+                            <% for (HamroTraveller user : users) {
+                                boolean isSuspended = "suspended".equals(user.getRole());
+                                String joinedDate = user.getCreatedAt() != null
+                                    ? new java.text.SimpleDateFormat("dd MMM, yyyy").format(user.getCreatedAt())
+                                    : "N/A";
+                            %>
+                            <tr class="group hover:bg-gray-50/50 transition-colors <%= isSuspended ? "opacity-60" : "" %>">
+                                <td class="py-5">
+                                    <div class="flex items-center gap-3">
+                                        <img src="https://ui-avatars.com/api/?name=<%= java.net.URLEncoder.encode(user.getFullName(), "UTF-8") %>&background=047857&color=fff"
+                                             class="w-10 h-10 rounded-xl" alt="Avatar">
+                                        <div>
+                                            <p class="text-xs font-bold text-main"><%= user.getFullName() %></p>
+                                            <p class="text-[10px] text-muted font-medium"><%= user.getEmail() %></p>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td class="py-5">
-                                <span class="px-3 py-1 rounded-lg bg-gray-100 text-muted text-[9px] font-bold uppercase">Traveller</span>
-                            </td>
-                            <td class="py-5">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                    <span class="text-[10px] text-emerald-600 font-bold">Active</span>
-                                </div>
-                            </td>
-                            <td class="py-5 text-xs font-bold text-muted">Oct 12, 2025</td>
-                            <td class="py-5 text-right">
-                                <button class="text-muted hover:text-main transition-colors"><span class="material-icons text-lg">more_horiz</span></button>
-                            </td>
-                        </tr>
-                        <tr class="group hover:bg-gray-50/50 transition-colors">
-                            <td class="py-5">
-                                <div class="flex items-center gap-3">
-                                    <img src="https://ui-avatars.com/api/?name=Elite+Expeditions&background=random" class="w-10 h-10 rounded-xl" alt="Avatar">
-                                    <div>
-                                        <p class="text-xs font-bold text-main">Elite Expeditions</p>
-                                        <p class="text-[10px] text-muted font-medium">info@eliteexp.com</p>
+                                </td>
+                                <td class="py-5">
+                                    <span class="px-3 py-1 rounded-lg bg-gray-100 text-muted text-[9px] font-bold uppercase">Traveller</span>
+                                </td>
+                                <td class="py-5">
+                                    <% if (isSuspended) { %>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                                            <span class="text-[10px] text-red-600 font-bold">Suspended</span>
+                                        </div>
+                                    <% } else { %>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                            <span class="text-[10px] text-emerald-600 font-bold">Active</span>
+                                        </div>
+                                    <% } %>
+                                </td>
+                                <td class="py-5 text-xs font-bold text-muted"><%= joinedDate %></td>
+                                <td class="py-5 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <% if (isSuspended) { %>
+                                            <form method="post" action="<%= request.getContextPath() %>/admin/users/">
+                                                <input type="hidden" name="action" value="activate">
+                                                <input type="hidden" name="userId" value="<%= user.getId() %>">
+                                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-[9px] font-bold uppercase hover:bg-emerald-100 transition-all">Activate</button>
+                                            </form>
+                                        <% } else { %>
+                                            <form method="post" action="<%= request.getContextPath() %>/admin/users/">
+                                                <input type="hidden" name="action" value="suspend">
+                                                <input type="hidden" name="userId" value="<%= user.getId() %>">
+                                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-yellow-50 text-yellow-700 text-[9px] font-bold uppercase hover:bg-yellow-100 transition-all">Suspend</button>
+                                            </form>
+                                        <% } %>
+                                        <form method="post" action="<%= request.getContextPath() %>/admin/users/"
+                                              onsubmit="return confirm('Delete this user permanently?')">
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="userId" value="<%= user.getId() %>">
+                                            <button type="submit" class="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-[9px] font-bold uppercase hover:bg-red-100 transition-all">Delete</button>
+                                        </form>
                                     </div>
-                                </div>
-                            </td>
-                            <td class="py-5">
-                                <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-[9px] font-bold uppercase">Agency</span>
-                            </td>
-                            <td class="py-5">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                    <span class="text-[10px] text-emerald-600 font-bold">Verified</span>
-                                </div>
-                            </td>
-                            <td class="py-5 text-xs font-bold text-muted">Jan 05, 2026</td>
-                            <td class="py-5 text-right">
-                                <button class="text-muted hover:text-main transition-colors"><span class="material-icons text-lg">more_horiz</span></button>
-                            </td>
-                        </tr>
-                        <tr class="group hover:bg-gray-50/50 transition-colors">
-                            <td class="py-5">
-                                <div class="flex items-center gap-3 opacity-60">
-                                    <img src="https://ui-avatars.com/api/?name=Spam+User&background=random" class="w-10 h-10 rounded-xl" alt="Avatar">
-                                    <div>
-                                        <p class="text-xs font-bold text-main">Spam User</p>
-                                        <p class="text-[10px] text-muted font-medium">bot@spam.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="py-5 opacity-60">
-                                <span class="px-3 py-1 rounded-lg bg-gray-100 text-muted text-[9px] font-bold uppercase">Traveller</span>
-                            </td>
-                            <td class="py-5">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                                    <span class="text-[10px] text-red-600 font-bold">Banned</span>
-                                </div>
-                            </td>
-                            <td class="py-5 text-xs font-bold text-muted opacity-60">Mar 20, 2026</td>
-                            <td class="py-5 text-right">
-                                <button class="text-emerald-600 hover:text-emerald-700 text-[10px] font-bold uppercase transition-colors">Unban</button>
-                            </td>
-                        </tr>
+                                </td>
+                            </tr>
+                            <% } %>
+                        <% } %>
                     </tbody>
                 </table>
             </div>

@@ -18,7 +18,7 @@ public class BookingDAO {
      */
     public List<Booking> getAllBookings() {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT * FROM Bookings ORDER BY createdAt DESC";
+        String sql = "SELECT b.*, l.title AS listingTitle FROM Bookings b LEFT JOIN Listings l ON b.listingId = l.id ORDER BY b.createdAt DESC";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -95,7 +95,7 @@ public class BookingDAO {
      * @return Booking object if found, null otherwise.
      */
     public Booking getBookingById(String id) {
-        String sql = "SELECT * FROM Bookings WHERE id = ?";
+        String sql = "SELECT b.*, l.title AS listingTitle FROM Bookings b LEFT JOIN Listings l ON b.listingId = l.id WHERE b.id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -119,7 +119,7 @@ public class BookingDAO {
      */
     public List<Booking> getBookingsByTravellerId(String travellerId) {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT * FROM Bookings WHERE travellerId = ? ORDER BY createdAt DESC";
+        String sql = "SELECT b.*, l.title AS listingTitle FROM Bookings b LEFT JOIN Listings l ON b.listingId = l.id WHERE b.travellerId = ? ORDER BY b.createdAt DESC";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -143,7 +143,7 @@ public class BookingDAO {
      */
     public List<Booking> getBookingsByAgentId(String agentId) {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT * FROM Bookings WHERE agentId = ? ORDER BY createdAt DESC";
+        String sql = "SELECT b.*, l.title AS listingTitle FROM Bookings b LEFT JOIN Listings l ON b.listingId = l.id WHERE b.agentId = ? ORDER BY b.createdAt DESC";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -191,7 +191,7 @@ public class BookingDAO {
      */
     public List<Booking> getBookingsByStatus(String status) {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT * FROM Bookings WHERE status = ? ORDER BY createdAt DESC";
+        String sql = "SELECT b.*, l.title AS listingTitle FROM Bookings b LEFT JOIN Listings l ON b.listingId = l.id WHERE b.status = ? ORDER BY b.createdAt DESC";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -403,6 +403,11 @@ public class BookingDAO {
         booking.setChecklist(rs.getString("checklist"));
         booking.setCreatedAt(rs.getTimestamp("createdAt"));
         booking.setUpdatedAt(rs.getTimestamp("updatedAt"));
+        // Try to populate listingTitle from join
+        try {
+            String title = rs.getString("listingTitle");
+            if (title != null) booking.setListingTitle(title);
+        } catch (SQLException ignored) {}
         return booking;
     }
 }

@@ -196,18 +196,29 @@
                     Object sessionUser = session.getAttribute("user");
                     String userRole = (String) session.getAttribute("role");
                     String dashboardUrl = "login.jsp";
+                    String profileUrl = "login.jsp";
                     String displayName = "Login";
+                    String profileImageUrl = null;
                     
                     if (sessionUser != null) {
                         if ("admin".equals(userRole)) {
                             dashboardUrl = "admin/dashboard";
-                            displayName = ((com.yatraconnect.model.Admin)sessionUser).getFullName().split(" ")[0];
+                            profileUrl = "admin/profile.jsp";
+                            com.yatraconnect.model.Admin adminUser = (com.yatraconnect.model.Admin) sessionUser;
+                            displayName = adminUser.getFullName().split(" ")[0];
+                            profileImageUrl = adminUser.getProfileImage();
                         } else if ("agent".equals(userRole)) {
                             dashboardUrl = "agency/dashboard";
-                            displayName = ((HamroAgent)sessionUser).getFullName().split(" ")[0];
+                            profileUrl = "agency/profile.jsp";
+                            HamroAgent agentUser = (HamroAgent) sessionUser;
+                            displayName = agentUser.getFullName().split(" ")[0];
+                            profileImageUrl = agentUser.getProfileImage();
                         } else {
-                            dashboardUrl = "traveller/dashboard";
-                            displayName = ((HamroTraveller)sessionUser).getFullName().split(" ")[0];
+                            dashboardUrl = "traveller/dashboard.jsp";
+                            profileUrl = "traveller/profile.jsp";
+                            HamroTraveller travellerUser = (HamroTraveller) sessionUser;
+                            displayName = travellerUser.getFullName().split(" ")[0];
+                            profileImageUrl = travellerUser.getProfileImage();
                         }
                     }
                 %>
@@ -225,8 +236,12 @@
                 <div class="relative group/profile">
                     <a href="<%= request.getContextPath() %>/<%= dashboardUrl %>"
                         class="hidden sm:flex items-center gap-2 text-white hover:text-white/80 transition-all no-underline">
-                        <div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#C5A059] flex items-center justify-center text-primary border border-white/20 shadow-lg">
-                            <span class="material-icons text-base md:text-lg">person</span>
+                        <div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#C5A059] flex items-center justify-center text-primary border border-white/20 shadow-lg overflow-hidden">
+                            <% if (profileImageUrl != null && !profileImageUrl.isEmpty()) { %>
+                                <img src="<%= profileImageUrl %>" class="w-full h-full object-cover" alt="Profile">
+                            <% } else { %>
+                                <span class="material-icons text-base md:text-lg">person</span>
+                            <% } %>
                         </div>
                         <span class="text-[9px] md:text-[10px] font-black tracking-[0.15em] uppercase"><%= displayName %></span>
                     </a>
@@ -235,8 +250,11 @@
                              <a href="<%= request.getContextPath() %>/<%= dashboardUrl %>" class="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 text-[10px] font-bold text-gray-700 uppercase tracking-widest no-underline transition-all">
                                 <span class="material-icons text-sm">dashboard</span> Dashboard
                             </a>
+                            <a href="<%= request.getContextPath() %>/<%= profileUrl %>" class="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 text-[10px] font-bold text-gray-700 uppercase tracking-widest no-underline transition-all">
+                                <span class="material-icons text-sm">account_circle</span> Profile
+                            </a>
                             <% if ("traveller".equals(userRole)) { %>
-                            <a href="<%= request.getContextPath() %>/traveller/wishlist.jsp" class="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 text-[10px] font-bold text-gray-700 uppercase tracking-widest no-underline transition-all">
+                            <a href="<%= request.getContextPath() %>/wishlist" class="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 text-[10px] font-bold text-gray-700 uppercase tracking-widest no-underline transition-all">
                                 <span class="material-icons text-sm text-red-500">favorite</span> Wishlist
                             </a>
                             <% } %>
@@ -247,6 +265,7 @@
                     </div>
                 </div>
                 <% } %>
+                <% if (!"admin".equals(userRole) && !"agent".equals(userRole)) { %>
                 <a href="<%= request.getContextPath() %>/explore.jsp"
                     class="relative group overflow-hidden bg-primary text-white px-4 md:px-7 py-2 md:py-2.5 rounded-full transition-all duration-300 shadow-lg hover:shadow-primary/25 border border-primary/20 no-underline">
                     <span
@@ -260,6 +279,7 @@
                         class="absolute top-0 -left-[100%] w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-all duration-1000 group-hover:left-[100%] pointer-events-none">
                     </div>
                 </a>
+                <% } %>
                 <!-- Mobile Menu Toggle -->
                 <button onclick="document.getElementById('mobileMenu').classList.toggle('translate-x-full')"
                     class="lg:hidden w-8 h-8 md:w-9 md:h-9 rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white/10 transition-all">
